@@ -1,0 +1,3 @@
+This notebook is a recoding of the analysis used in the PLoSONE paper: [Non-Invasive Mapping of the Gastrointestinal Microbiota Identifies Children with Inflammatory Bowel Disease](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0039242) using python, sklearn and pandas.
+      
+The SLiME package, as it was packaged for the publication of the paper, is not in the open anymore. In its place, this notebook will serve as a repository of the analysis. I hope this can be the starting point for others trying to follow the same approach and improve upon it.
