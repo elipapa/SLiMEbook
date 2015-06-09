@@ -1,19 +1,6 @@
 # -*- coding: utf-8 -*-
 # <nbformat>3.0</nbformat>
 
-# <markdowncell>
-
-# **TODO** 
-# - other figures in the paper
-# - why not move the data to mldata.org? and use the sklearn facility to download it?
-# - take the raw slime data (uclust, etc) not normalized to 0,1 and rerun RFs
-# - use SparCC from Jonathan to build new OTU table
-# - what parameters did i use in the R scripts?
-# - submodule to convert from BIOM format to something classifiable
-# - convert actual slime data
-# - other ML algorithms
-# - right preprocessing of other data (may need uclust, etc)
-
 # <headingcell level=1>
 
 # Classifying pediatric IBD stool samples
@@ -22,7 +9,8 @@
 
 # This notebook is a recoding of the analysis used in the PLoSONE paper: [Non-Invasive Mapping of the Gastrointestinal Microbiota Identifies Children with Inflammatory Bowel Disease](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0039242) using python, sklearn and pandas.
 # 
-# The SLiME package, as it was packaged for the publication of the paper, is not. In its place, this notebook will serve as a repository of the analysis. I hope this can be the starting point for others trying to follow the same approach and improve upon it. 
+# We decided that the SLiME package, as it was packaged for the publication of the paper, should not be available anymore. This notebook replaces it, replicating the analysis executed on the paper with more up-to-date tools and (hopefully soon) expanding on its conclusion. 
+# I hope this can be the starting point for others trying to follow the same approach and improve upon it. 
 
 # <codecell>
 
@@ -37,7 +25,7 @@ from scipy import interp
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.cross_validation import cross_val_score, StratifiedKFold, train_test_split
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.preprocessing import LabelEncoder, label_binarize
 
 # <headingcell level=3>
@@ -74,7 +62,7 @@ assert (X_blind.index == y_blind.index).all()
 
 #concatenate using pandas
 X = pd.concat([X_chimp, X_blind], keys=['chimp','blind'])
-X
+X.head()
 
 # <codecell>
 
