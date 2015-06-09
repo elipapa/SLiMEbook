@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 # <nbformat>3.0</nbformat>
 
-# <headingcell level=1>
+# <markdowncell>
 
-# Classifying pediatric IBD stool samples (work in progress)
+# #Classifying pediatric IBD stool samples (work in progress)
 
 # <markdowncell>
 
 # This notebook is a recoding of the analysis used in the PLoSONE paper: [Non-Invasive Mapping of the Gastrointestinal Microbiota Identifies Children with Inflammatory Bowel Disease](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0039242) using python, sklearn and pandas.
 # 
-# We decided that the SLiME package, as it was packaged for the publication of the paper, should not be available anymore. This notebook replaces it, replicating the analysis executed on the paper with more up-to-date tools and (hopefully soon) expanding on its conclusion. 
+# [We](http://almlab.mit.edu) decided that the SLiME package, as it was packaged for the publication of the paper, should not be available anymore. This notebook replaces it, replicating the analysis executed on the paper with more up-to-date tools and (hopefully soon) expanding on its conclusion. 
 # I hope this can be the starting point for others trying to follow the same approach and improve upon it. 
 
 # <codecell>
@@ -28,19 +28,22 @@ from sklearn.cross_validation import cross_val_score, StratifiedKFold, train_tes
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.preprocessing import LabelEncoder, label_binarize
 
-# <headingcell level=3>
-
-# Loading all CHIMP and subsequent blind validation data
-
 # <markdowncell>
 
-# These were used as training and test set in the last figure of the paper respectively. It is useful to join them here
+# ##Loading data
+# The data came from two rounds of 16S sequencing of previously collected stool samples. Here we will use the OTU tables directly, which were created by using the RDP classifier and were subsequently normalized (details in the paper's methods).
+# 
+# Sequencing was performed at the [Broad Institute](https://www.broadinstitute.org/). The first round of sequencing was dubbed CHIMP (Children Hospital IBD Pediatric), while the second round of sequencing -- performed following the request of an anonymous peer reviewer -- was termed 'blind validation'. Its purpose was to further validate the algorithm trained on the CHIMP dataset, as the reviewer did not think sufficient a "leave 20% out" approach on CHIMP was sufficient to demonstrate robust prediction. These were used as training and test set in the last figure of the paper respectively.
+# 
+# It is useful to join the two data sets here.
 
 # <codecell>
 
 #get the CHIMP training data
+
 X_chimp = pd.read_csv('data/chimp/chimp.Qsorted.rdpout.xtab.norm', delimiter="\t", index_col=0)
 y_chimp = pd.read_csv('data/chimp/sampledata.training.chimp.csv', index_col=0)
+
 #just make sure the labels are the same
 X_chimp.sort_index(inplace=True)
 y_chimp.sort_index(inplace=True)
@@ -48,7 +51,7 @@ assert (X_chimp.index == y_chimp.index).all()
 
 # <codecell>
 
-## get the blind validation test data
+## do the same for the blind validation test data
 X_blind = pd.read_csv('data/chimp/blind.sorted.rdpout.xtab.norm',
                         delimiter="\t", index_col=0)
 y_blind = pd.read_csv('data/chimp/sampledata.validation.blind.csv',
@@ -66,7 +69,7 @@ X.head()
 
 # <codecell>
 
-X.fillna(value=0,inplace=True)
+X.fillna(value=0,inplace=True) #replace NAs with zeroes
 
 # <codecell>
 
@@ -79,12 +82,17 @@ y_dx #btw, what joy is to use pandas over R/dplyr for this. so intuitive and fas
 le = LabelEncoder()
 le.fit(y_dx)
 y = le.transform(y_dx)
+
 # just for reference, the columns of the binarized label read respectively:
 le.inverse_transform([0,1,2])
 
-# <headingcell level=3>
+# <markdowncell>
 
-# Run vanilla multiclass classifier
+# ## Label classification
+# *Please note that the ROC plots will look different everytime the notebook is run due to the random nature of the cross-validation split*
+# 
+# ### Vanilla classifier
+# We will go straight to using RandomForest and a 10-fold cross validation. Many other models were tried but RandomForest consistently prevented overfitting. First let's get an idea of how it looks like when you try to classify all the labels at the same time. 
 
 # <codecell>
 
@@ -104,12 +112,9 @@ print("feature ranking:")
 for f in range(20):
     print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
 
-# <headingcell level=3>
-
-# Build a One-vs-all ROC curve (not cross validated)
-
 # <markdowncell>
 
+# ### Build a One-vs-all ROC curve (not cross validated)
 # To build a ROC curve we need to binarize the variable and run the classifier as one class vs. all others
 
 # <codecell>
@@ -128,7 +133,7 @@ y_score = clf1.fit(X_train, y_train).predict_proba(X_test)
 
 # <markdowncell>
 
-# We then need to introduce some cross validation, to get an indication of how robust is this model:
+# The probabilities of each class are now in a numpy array where each row corresponds to sample and each column to the label in question (CD, NM or UC). Let's take a pick at the first 10:
 
 # <codecell>
 
@@ -160,7 +165,7 @@ plt.show()
 
 # <codecell>
 
-# Plot ROC curve
+# Plot ROC curves all together now
 plt.figure()
 
 for i in range(n_classes):
@@ -176,9 +181,9 @@ plt.title('ROC - one random 1/3 split')
 plt.legend(loc="lower right")
 plt.show()
 
-# <headingcell level=3>
+# <markdowncell>
 
-# ROC cross validated, one vs. all - Figure 6A
+# ### ROC cross validated, one vs. all - Figure 6A
 
 # <codecell>
 
@@ -256,4 +261,10 @@ plt.ylabel('True Positive Rate')
 plt.title('Figure 6A - ROC - crossvalidated - CD vs UC')
 plt.legend(loc="lower right")
 plt.show()
+
+# <codecell>
+
+
+# <codecell>
+
 
