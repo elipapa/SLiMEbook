@@ -3,7 +3,7 @@
 
 # <headingcell level=1>
 
-# Classifying pediatric IBD stool samples
+# Classifying pediatric IBD stool samples (work in progress)
 
 # <markdowncell>
 
