@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from scipy import interp
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.cross_validation import cross_val_score, StratifiedKFold, train_test_split
+from sklearn.cross_validation import cross_val_score, StratifiedKFold, train_test_split, KFold
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.preprocessing import LabelEncoder, label_binarize
 
@@ -183,11 +183,13 @@ plt.show()
 
 # <markdowncell>
 
-# ### ROC cross validated, one vs. all - Figure 6A
+# ### ROC cross validated [Figure 6A](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0039242#pone-0039242-g006)
+# #### top panel: one vs all
 
 # <codecell>
 
 # Run classifier with cross-validation and plot ROC curves
+
 for dx in range(n_classes):
     cv = StratifiedKFold(y_bin[:,dx], n_folds=10)
     classifier = RandomForestClassifier()
@@ -219,6 +221,10 @@ plt.ylabel('True Positive Rate')
 plt.title('Figure 6A - ROC - crossvalidated - one vs. all')
 plt.legend(loc="lower right")
 plt.show()
+
+# <markdowncell>
+
+# #### bottom panel: CD vs UC
 
 # <codecell>
 
@@ -259,6 +265,59 @@ plt.ylim([-0.05, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Figure 6A - ROC - crossvalidated - CD vs UC')
+plt.legend(loc="lower right")
+plt.show()
+
+# <markdowncell>
+
+# ## Comparison with the Frank et al. dataset
+# The [original paper](http://www.pnas.org/content/104/34/13780.full) links to the available dataset. As outlined in the paper, the SLiME pipeline runs RDP on the fasta files and outputs a matrix of normalized abundance of each family, class, genus, etc. 
+# 
+# I am going to load directly that table, which has had the ibd classification label appended to it.
+
+# <codecell>
+
+frank = pd.read_csv('data/pace/pace.rdpout.xtab.norm.ibd.csv')
+frank_label = frank['ibd']
+del frank['ibd']
+frank_label = (frank_label == 'yes')
+frank_label.value_counts()
+
+# <codecell>
+
+def crossval_roc(X, y):
+    cv = StratifiedKFold(y, n_folds=10)
+    clf = RandomForestClassifier()
+
+    mean_tpr = 0.0
+    mean_fpr = np.linspace(0, 1, 100)
+    all_tpr = []
+
+    for i, (train, test) in enumerate(cv):
+        fitted = clf.fit(X[train], y[train])
+        probas_ = fitted.predict_proba(X[test])
+        scored_ = fitted.predict(X[test])
+        # Compute ROC curve and area the curve
+        fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1])
+        mean_tpr += interp(mean_fpr, fpr, tpr)
+        mean_tpr[0] = 0.0
+        #roc_auc = auc(fpr, tpr)
+        roc_auc = roc_auc_score(scored_, y[test], average="micro")
+        #plt.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)' % (i, roc_auc))
+
+
+    mean_tpr /= len(cv)
+    mean_tpr[-1] = 1.0
+    mean_auc = auc(mean_fpr, mean_tpr)
+    return plt.plot(mean_fpr, mean_tpr, 
+                    label='Mean ROC (area = %0.2f)' % mean_auc, lw=1)
+
+fig = crossval_roc(frank.values,frank_label.values)
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Frank et al. cross-validated ROC')
 plt.legend(loc="lower right")
 plt.show()
 
