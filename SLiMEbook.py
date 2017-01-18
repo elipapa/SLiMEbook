@@ -283,6 +283,10 @@ del frank['ibd']
 frank_label = (frank_label == 'yes')
 frank_label.value_counts()
 
+# <markdowncell>
+
+# ### Figure 1A
+
 # <codecell>
 
 def crossval_roc(X, y):
@@ -309,21 +313,39 @@ def crossval_roc(X, y):
     mean_tpr /= len(cv)
     mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
-    return plt.plot(mean_fpr, mean_tpr, 
+    plt.plot(mean_fpr, mean_tpr, 
                     label='Mean ROC (area = %0.2f)' % mean_auc, lw=1)
+    plt.legend(loc="lower right")
+    plt.xlim([-0.05, 1.05])
+    plt.ylim([-0.05, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
 
 fig = crossval_roc(frank.values,frank_label.values)
-plt.xlim([-0.05, 1.05])
-plt.ylim([-0.05, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
 plt.title('Frank et al. cross-validated ROC')
-plt.legend(loc="lower right")
 plt.show()
 
+# <markdowncell>
+
+# ### Figure 1B
+# 
+# ROC curve for SLiME classification of active IBD patients vs controls in the pediatric case-control data set.
+
 # <codecell>
 
+y_isibd = (y != 1)
+crossval_roc(X.values, y_isibd)
 
 # <codecell>
 
+y_blind['active'] = (y_blind.activity == 'Mild') | (y_blind.activity == 'Severe') | (y_blind.activity == 'Moderate')
+y_active = pd.concat([y_chimp.active == 'active', y_blind.active], keys =['chimp','blind'])
+crossval_roc(X.values,y_active)
+
+# <codecell>
+
+# TODO : find the best features based on KW test + FDR/qval adjustment
+# look into https://github.com/thomas-haslwanter/statsintro/blob/master/Code3/KruskalWallis.py
+#http://statsmodels.sourceforge.net/devel/generated/statsmodels.sandbox.stats.multicomp.multipletests.html
+# http://docs.scipy.org/doc/scipy-0.13.0/reference/generated/scipy.stats.mstats.kruskalwallis.html
 
